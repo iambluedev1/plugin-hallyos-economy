@@ -41,6 +41,13 @@ public class PlayerManager implements Listener {
         }
     }
 
+    public void init(String playerName) {
+        if (users.get(playerName) == null) {
+            users.put(playerName, repository.get(playerName));
+        }
+    }
+
+
     public User get(Player player) {
         return users.get(player.getName());
     }

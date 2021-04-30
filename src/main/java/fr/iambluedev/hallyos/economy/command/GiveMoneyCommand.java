@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 public class GiveMoneyCommand extends AbstractCommand {
 
@@ -49,16 +50,32 @@ public class GiveMoneyCommand extends AbstractCommand {
             return;
         }
 
+        User user;
+
         if (toPlayer == null) {
             sender.sendMessage(HallyosEconomy.get().getTranslator().translate(Lang.FRENCH, "global_not_online", ""));
-            return;
+            UserRepository repository = new UserRepository();
+            if (!repository.exist(args.get(0))) {
+                Bukkit.getLogger().log(Level.INFO, "User " + args.get(0) + " doesn't exist, create it in db before crediting money");
+                User tmp = new User();
+                tmp.setLogin(args.get(0));
+                tmp.setMoney(HallyosEconomy.get().getCustomConfig().getFileConfig().getInt("starter.amount"));
+                tmp.setAt(System.currentTimeMillis() / 1000);
+                repository.save(tmp);
+            }
+            Bukkit.getLogger().log(Level.INFO, "Retrieving offline profile of " + args.get(0));
+            PlayerManager.get().init(args.get(0));
+            user = PlayerManager.get().get(args.get(0));
+        } else {
+            user = PlayerManager.get().get(toPlayer);
         }
 
-        User user = PlayerManager.get().get(toPlayer);
         user.setMoney(user.getMoney() + amount);
         new UserRepository().save(user);
 
-        toPlayer.sendMessage(HallyosEconomy.get().getTranslator().translate(Lang.FRENCH, "economy_receive_success", String.valueOf(amount)));
+        if(toPlayer != null)
+            toPlayer.sendMessage(HallyosEconomy.get().getTranslator().translate(Lang.FRENCH, "economy_receive_success", String.valueOf(amount)));
+
         sender.sendMessage(HallyosEconomy.get().getTranslator().translate(Lang.FRENCH, "economy_send_success", String.valueOf(amount), user.getLogin()));
 
         User senderUser = null;
